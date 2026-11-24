@@ -6,7 +6,7 @@
 - Orchestrator at src/econ/publish/update.py; workflows update-data / deploy-site / ci; docs/runbook.md
 - pytest green, audit clean, codemap --check clean; gate G1 lacks only ledger/health.json + ledger/forecasts (first CI run)
 - Owner decisions: scope macro+US+gold+oil, horizons 1-3m & 6-12m; workflows local only; git status/diff allowed
-- NOTHING COMMITTED YET for P2
+- P2 committed 1ce9a4d on branch p2-live-slice (pushed; NOT merged to main, so cron/deploy inactive)
 
 ## In progress
 - T008 web BLOCKED: npm install ETIMEDOUT (corporate proxy); web/ written but never typechecked/built; no package-lock.json
@@ -28,4 +28,4 @@
 - npm: Owner configures proxy/mirror, or leave web build to CI?
 - id case: lower_snake (code now) vs UPPER_SNAKE (.claude/rules/registries.md, note N002)?
 - keep medium-horizon p_up as secondary field next to the return band?
-- commit the P2 work now?
+- merge p2-live-slice into main? (activates cron + deploy; fix ruff first)

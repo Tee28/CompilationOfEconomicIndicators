@@ -6,3 +6,4 @@
 - 2026-11-24 | Owner | G1 | P2 live slice scope: global macro + US equities + gold + oil; horizons short (1-3m) and medium (6-12m); other markets deferred to G2
 - 2026-11-24 | Owner | G1 | P2 outward actions: write cron/deploy workflow files and test locally only; no push, no Pages enable, no new secrets this round
 - 2026-11-24 | Owner | - | Owner added Bash(git status *) and Bash(git diff *) to .claude/settings.json allow list for /wrap
+- 2026-11-24 | Owner | - | Owner asked to push all work for multi-machine use; pushed commit 1ce9a4d to new branch p2-live-slice (not main, so cron/deploy stay inactive per local-only decision)
