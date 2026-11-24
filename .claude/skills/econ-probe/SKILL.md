@@ -4,10 +4,9 @@ description: P0 probe of Claude Code behaviour on this machine - hooks, agent_ty
 disable-model-invocation: true
 shell: bash
 ---
-!`python econ.py probe enable --soft`
-!`python econ.py probe mark skill-bang --soft`
+!`python econ.py probe enable --mark skill-bang --soft`
 
-The two lines above enabled the probe (note the nonce) and recorded that skill `!` commands run.
+The line above enabled the probe (note the nonce) and recorded that skill `!` commands run.
 Now do exactly this, in order, without editing any file:
 
 1. Read `.econ/probe/big.txt` WITHOUT offset/limit. The token guard should DENY it - that is the expected

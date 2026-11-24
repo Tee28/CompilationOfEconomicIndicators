@@ -27,6 +27,8 @@ def enable(args) -> Result:
     nonce = secrets.token_hex(3)
     (PROBE / "enabled").write_text(nonce, encoding="utf-8")
     (PROBE / "big.txt").write_text(("probe line for the token guard test\n" * 1800), encoding="utf-8")
+    if getattr(args, "mark", None):  # skill `!` lines may run concurrently: a separate mark line races the rmtree
+        _write_mark(args.mark)
     return Result(f"probe enabled · nonce {nonce} · big file .econ/probe/big.txt (64KB)", {"nonce": nonce})
 
 
@@ -36,13 +38,17 @@ def disable(args) -> Result:
 
 
 def mark(args) -> Result:
+    _write_mark(args.name)
+    return Result(f"probe mark '{args.name}' recorded")
+
+
+def _write_mark(name: str):
     d = PROBE / "marks"
     d.mkdir(parents=True, exist_ok=True)
     info = {"ts": now(), "python": sys.executable, "cwd": os.getcwd(),
             "shell": {k: os.environ.get(k) for k in ("SHELL", "MSYSTEM", "ComSpec", "PSModulePath") if os.environ.get(k)}}
     info["shell"] = {k: (v[:60] if isinstance(v, str) else v) for k, v in info["shell"].items()}
-    (d / f"{args.name}.json").write_text(json.dumps(info, ensure_ascii=False), encoding="utf-8")
-    return Result(f"probe mark '{args.name}' recorded")
+    (d / f"{name}.json").write_text(json.dumps(info, ensure_ascii=False), encoding="utf-8")
 
 
 def transcript_tokens(path: str) -> dict:
@@ -68,6 +74,32 @@ def transcript_tokens(path: str) -> dict:
         tot["cache_w"] += int(u.get("cache_creation_input_tokens") or 0)
     tot["messages"] = len(last)
     return tot
+
+
+def transcript_replies(path: str) -> str:
+    """All text an agent sent back: assistant text blocks plus any tool_use `input.message`
+    (the final report may arrive via a hand-back tool call instead of plain text)."""
+    p = Path(os.path.expanduser(path or ""))
+    if not path or not p.is_file():
+        return ""
+    out = []
+    with p.open(encoding="utf-8", errors="replace") as fh:
+        for line in fh:
+            try:
+                d = json.loads(line)
+            except ValueError:
+                continue
+            msg = d.get("message") if isinstance(d.get("message"), dict) else None
+            if not msg or msg.get("role") != "assistant" or not isinstance(msg.get("content"), list):
+                continue
+            for b in msg["content"]:
+                if not isinstance(b, dict):
+                    continue
+                if b.get("type") == "text":
+                    out.append(str(b.get("text") or ""))
+                elif b.get("type") == "tool_use" and isinstance(b.get("input"), dict):
+                    out.append(str(b["input"].get("message") or ""))
+    return "\n".join(out)
 
 
 def _payloads() -> list[dict]:
@@ -122,7 +154,9 @@ def report(args) -> Result:
         "Check the PreToolUse Agent|Task matcher and config/hooks.json spawn.")
     worker_stop = [p for p in stops if agent_of(p) == "probe-worker"]
     mgr_stop = [p for p in stops if agent_of(p) == "probe-manager"]
-    mgr_msg = " ".join(str((p.get("data") or {}).get("last_assistant_message") or "") for p in mgr_stop)
+    mgr_msg = " ".join(str((p.get("data") or {}).get("last_assistant_message") or "") + " "
+                       + transcript_replies((p.get("data") or {}).get("agent_transcript_path") or "")
+                       for p in mgr_stop)
     if worker_stop and nonce and f"WORKER-OK-{nonce}" in mgr_msg:
         add("nested spawn + manager waits", "PASS", "probe-manager received probe-worker's token")
     elif worker_stop:

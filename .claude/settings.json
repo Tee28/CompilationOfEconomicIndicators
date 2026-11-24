@@ -8,7 +8,9 @@
     "allow": [
       "Bash(python econ.py *)",
       "Bash(python -m pytest *)",
-      "Bash(npm --prefix web run *)"
+      "Bash(npm --prefix web run *)",
+      "Bash(git status *)",
+      "Bash(git diff *)"
     ],
     "deny": [
       "Read(/.env)",

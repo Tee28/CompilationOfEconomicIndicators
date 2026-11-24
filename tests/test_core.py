@@ -3,7 +3,7 @@ import json
 from conftest import run_cli
 from econ.common import redact
 from econ.http import fill, placeholders
-from econ.probe import transcript_tokens
+from econ.probe import transcript_replies, transcript_tokens
 from econ.sources import check_one, validate
 
 
@@ -44,6 +44,19 @@ def test_transcript_tokens_dedupes_streamed_ids(tmp_path):
     p.write_text("\n".join(r if isinstance(r, str) else json.dumps(r) for r in rows), encoding="utf-8")
     t = transcript_tokens(str(p))
     assert t == {"in": 8, "out": 11, "cache_r": 100, "cache_w": 0, "messages": 2}
+
+
+def test_transcript_replies_reads_text_and_handback(tmp_path):
+    p = tmp_path / "t.jsonl"
+    rows = [{"message": {"role": "user", "content": [{"type": "text", "text": "PROMPT-ONLY"}]}},
+            {"message": {"role": "assistant", "content": [{"type": "text", "text": "hello"}]}},
+            {"message": {"role": "assistant", "content": [{"type": "tool_use", "name": "SubagentHandback",
+                                                           "input": {"message": "MANAGER-OK x | worker: WORKER-OK-x"}}]}},
+            "not json"]
+    p.write_text("\n".join(r if isinstance(r, str) else json.dumps(r) for r in rows), encoding="utf-8")
+    out = transcript_replies(str(p))
+    assert "hello" in out and "WORKER-OK-x" in out and "PROMPT-ONLY" not in out
+    assert transcript_replies("") == ""
 
 
 def test_probe_report_detects_nested_wait(root):

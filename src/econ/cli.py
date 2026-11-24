@@ -21,8 +21,9 @@ def _status(args) -> Result:
 
 def build_parser() -> argparse.ArgumentParser:
     common = argparse.ArgumentParser(add_help=False)
-    common.add_argument("--json", action="store_true", help="machine-readable output")
-    common.add_argument("--soft", action="store_true", help="always exit 0 (use in skills)")
+    # SUPPRESS: a subparser must not reset a flag given before the subcommand (`econ --json gate check`)
+    common.add_argument("--json", action="store_true", default=argparse.SUPPRESS, help="machine-readable output")
+    common.add_argument("--soft", action="store_true", default=argparse.SUPPRESS, help="always exit 0 (use in skills)")
 
     p = argparse.ArgumentParser(prog="econ", description="Economic Outlook Lab CLI", parents=[common])
     sub = p.add_subparsers(dest="cmd", required=True)
@@ -33,6 +34,23 @@ def build_parser() -> argparse.ArgumentParser:
     sp = sub.add_parser("status", parents=[common], help="session brief (same as the SessionStart hook)")
     sp.add_argument("--full", action="store_true")
     sp.set_defaults(fn=_status)
+
+    from . import kb, work
+
+    work.register(sub, common)
+    kb.register(sub, common)
+
+    sp = sub.add_parser("audit", parents=[common], help="token-hygiene budgets (CI runs this)")
+    sp.set_defaults(fn=lambda a: __import__("econ.audit", fromlist=["run"]).run(a))
+
+    sp = sub.add_parser("codemap", parents=[common], help="regenerate docs/CODEMAP.md")
+    sp.add_argument("--check", action="store_true", help="exit 2 if stale (CI)")
+    sp.set_defaults(fn=lambda a: __import__("econ.codemap", fromlist=["run"]).run(a))
+
+    sp = sub.add_parser("context", parents=[common], help="minimal context pack for <role> <target>")
+    sp.add_argument("role")
+    sp.add_argument("target", nargs="?", default="-")
+    sp.set_defaults(fn=lambda a: __import__("econ.context", fromlist=["run"]).run(a))
 
     sp = sub.add_parser("src", parents=[common], help="source registry")
     ss = sp.add_subparsers(dest="sub", required=True)
@@ -49,6 +67,8 @@ def build_parser() -> argparse.ArgumentParser:
     ps = sp.add_subparsers(dest="sub", required=True)
     for name in ("enable", "disable", "report"):
         x = ps.add_parser(name, parents=[common])
+        if name == "enable":
+            x.add_argument("--mark", help="also record this mark (proves a skill `!` line ran)")
         x.set_defaults(fn=lambda a, n=name: getattr(__import__("econ.probe", fromlist=[n]), n)(a))
     x = ps.add_parser("mark", parents=[common])
     x.add_argument("name")
@@ -58,6 +78,7 @@ def build_parser() -> argparse.ArgumentParser:
 
 def main(argv: list[str]) -> int:
     args = build_parser().parse_args(argv)
+    args.json, args.soft = getattr(args, "json", False), getattr(args, "soft", False)
     try:
         res: Result = args.fn(args)
     except EconError as e:

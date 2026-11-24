@@ -1,4 +1,10 @@
 {
-  "stage": "P0",
-  "gates": {"G0": "open"}
+ "stage": "P2",
+ "gates": {
+  "G0": "approved",
+  "G1": "open",
+  "G2": "open",
+  "G3": "open",
+  "G4": "open"
+ }
 }
