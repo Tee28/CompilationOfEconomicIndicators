@@ -1,0 +1,48 @@
+name: src-check
+# Probe every candidate data source FROM THE RUNNER (US IPs, no corporate proxy).
+# Results: job summary + artifact "src-check" (30 days). Commit docs/source-verification.md locally if useful.
+on:
+  workflow_dispatch:
+    inputs:
+      ids:
+        description: "Space-separated source ids (empty = all)"
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+
+concurrency:
+  group: src-check
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.13"
+      - name: Install minimal deps
+        run: pip install --quiet pyyaml requests truststore
+      - name: Probe sources
+        env:
+          FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
+          EIA_API_KEY: ${{ secrets.EIA_API_KEY }}
+          COINGECKO_API_KEY: ${{ secrets.COINGECKO_API_KEY }}
+          ESTAT_APP_ID: ${{ secrets.ESTAT_APP_ID }}
+          IDS: ${{ inputs.ids }}
+        run: |
+          if [ -n "$IDS" ]; then python econ.py src check --write --soft --id $IDS; else python econ.py src check --write --soft; fi
+      - name: Job summary
+        run: cat docs/source-verification.md >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: src-check
+          path: |
+            docs/source-verification.md
+            .econ/src-check.json
+          include-hidden-files: true
+          retention-days: 30
