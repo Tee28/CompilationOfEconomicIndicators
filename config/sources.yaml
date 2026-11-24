@@ -1,0 +1,202 @@
+# Source registry (P0: reachability probes; connectors and series lists are added in P2).
+# license_class: open | attributed | internal   (internal = feeds models only, never displayed as levels/history)
+# probe.expect: json | csv | xml | html | xls | text
+# {ENV_NAME} placeholders are filled from the environment; values are redacted from every log/report.
+# key_optional: true = probe runs without the key (lower rate limit) when it is missing.
+sources:
+  # ------------------------------------------------------------- US & global macro
+  fred:
+    name: "FRED / ALFRED (St. Louis Fed)"
+    license_class: attributed
+    attribution: "This product uses the FRED® API but is not endorsed or certified by the Federal Reserve Bank of St. Louis."
+    key_env: FRED_API_KEY
+    budget: {per_minute: 100}
+    phase: P2
+    probe: {url: "https://api.stlouisfed.org/fred/series/observations?series_id=DGS10&api_key={FRED_API_KEY}&file_type=json&sort_order=desc&limit=3", expect: json}
+  imf_datamapper:
+    name: "IMF DataMapper (WEO)"
+    license_class: attributed
+    attribution: "Source: IMF World Economic Outlook (DataMapper)."
+    phase: P2
+    probe: {url: "https://www.imf.org/external/datamapper/api/v1/NGDP_RPCH/USA", expect: json}
+  imf_portal:
+    name: "IMF data portal (SDMX; PCPS commodity prices)"
+    license_class: attributed
+    attribution: "Source: International Monetary Fund."
+    phase: P3
+    note: "endpoint to confirm in P0 (new portal, SDMX 2.1/3.0)"
+    probe: {url: "https://api.imf.org/external/sdmx/2.1/dataflow", expect: xml}
+  worldbank:
+    name: "World Bank Indicators API"
+    license_class: attributed
+    attribution: "Source: World Bank (CC BY 4.0)."
+    phase: P2
+    probe: {url: "https://api.worldbank.org/v2/country/WLD/indicator/NY.GDP.MKTP.KD.ZG?format=json&per_page=3", expect: json}
+  worldbank_pinksheet:
+    name: "World Bank Commodity Prices (Pink Sheet, monthly)"
+    license_class: attributed
+    attribution: "Source: World Bank Commodity Price Data (The Pink Sheet), CC BY 4.0."
+    phase: P2
+    note: "the monthly xlsx link changes; discover it from this page"
+    probe: {url: "https://www.worldbank.org/en/research/commodity-markets", expect: html}
+  oecd:
+    name: "OECD Data Explorer SDMX (CLI, BCI, CCI)"
+    license_class: attributed
+    attribution: "Source: OECD."
+    budget: {per_hour: 60}
+    phase: P2
+    probe: {url: "https://sdmx.oecd.org/public/rest/dataflow/OECD.SDD.STES/DSD_STES@DF_CLI/latest", expect: xml}
+  ecb:
+    name: "ECB Data Portal API"
+    license_class: attributed
+    attribution: "Source: European Central Bank."
+    phase: P3
+    probe: {url: "https://data-api.ecb.europa.eu/service/data/EXR/D.USD.EUR.SP00.A?lastNObservations=3&format=jsondata", expect: json}
+  bis:
+    name: "BIS Data Portal API (policy rates)"
+    license_class: attributed
+    attribution: "Source: Bank for International Settlements."
+    phase: P3
+    note: "endpoint to confirm"
+    probe: {url: "https://stats.bis.org/api/v1/data/WS_CBPOL/D.US?lastNObservations=3&format=csv", expect: csv}
+  treasury_fiscal:
+    name: "US Treasury Fiscal Data (TGA)"
+    license_class: open
+    phase: P2
+    probe: {url: "https://api.fiscaldata.treasury.gov/services/api/fiscal_service/v1/accounting/dts/operating_cash_balance?sort=-record_date&page[size]=3", expect: json}
+  nyfed_acm:
+    name: "NY Fed ACM term premium"
+    license_class: attributed
+    attribution: "Source: Federal Reserve Bank of New York (Adrian, Crump and Moench)."
+    phase: P3
+    probe: {url: "https://www.newyorkfed.org/medialibrary/media/research/data_indicators/ACMTermPremium.xls", expect: xls}
+  eia:
+    name: "EIA Open Data API v2"
+    license_class: open
+    key_env: EIA_API_KEY
+    phase: P3
+    probe: {url: "https://api.eia.gov/v2/petroleum/stoc/wstk/data/?api_key={EIA_API_KEY}&frequency=weekly&data[0]=value&facets[series][]=WCESTUS1&sort[0][column]=period&sort[0][direction]=desc&length=3", expect: json}
+  gpr:
+    name: "Geopolitical Risk Index (Caldara & Iacoviello)"
+    license_class: attributed
+    attribution: "Source: Caldara and Iacoviello, Geopolitical Risk Index."
+    phase: P3
+    probe: {url: "https://www.matteoiacoviello.com/gpr_files/data_gpr_daily_recent.xls", expect: xls}
+  shiller:
+    name: "Robert Shiller online data (CAPE)"
+    license_class: internal
+    phase: P3
+    note: "data moved to shillerdata.com; confirm download link and terms"
+    probe: {url: "https://shillerdata.com/", expect: html}
+  # ------------------------------------------------------------- crypto
+  coingecko:
+    name: "CoinGecko API (Demo plan)"
+    license_class: attributed
+    attribution: "Data provided by CoinGecko."
+    key_env: COINGECKO_API_KEY
+    key_optional: true
+    budget: {per_minute: 30, per_month: 10000}
+    phase: P2
+    probe: {url: "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,pax-gold&vs_currencies=usd", expect: json, headers: {x-cg-demo-api-key: "{COINGECKO_API_KEY}"}}
+  coinbase:
+    name: "Coinbase Exchange public candles"
+    license_class: internal
+    phase: P2
+    probe: {url: "https://api.exchange.coinbase.com/products/BTC-USD/candles?granularity=86400", expect: json}
+  coinbase_paxg:
+    name: "Coinbase PAXG-USD (daily gold proxy)"
+    license_class: internal
+    phase: P2
+    probe: {url: "https://api.exchange.coinbase.com/products/PAXG-USD/candles?granularity=86400", expect: json}
+  kraken:
+    name: "Kraken public OHLC (fallback, last 720 points only)"
+    license_class: internal
+    phase: P2
+    probe: {url: "https://api.kraken.com/0/public/OHLC?pair=PAXGUSD&interval=1440", expect: json}
+  binance:
+    name: "Binance api.binance.com (client-side only; 451 from US IPs)"
+    license_class: internal
+    phase: client
+    probe: {url: "https://api.binance.com/api/v3/ping", expect: json}
+  binance_vision:
+    name: "Binance data-api.binance.vision (market data)"
+    license_class: internal
+    phase: client
+    probe: {url: "https://data-api.binance.vision/api/v3/ping", expect: json}
+  alternative_me:
+    name: "alternative.me Crypto Fear & Greed"
+    license_class: attributed
+    attribution: "Crypto Fear & Greed Index by alternative.me."
+    phase: P2
+    probe: {url: "https://api.alternative.me/fng/?limit=2", expect: json}
+  defillama:
+    name: "DefiLlama stablecoins"
+    license_class: attributed
+    attribution: "Source: DefiLlama."
+    phase: P2
+    probe: {url: "https://stablecoins.llama.fi/stablecoincharts/all?stablecoin=1", expect: json}
+  mempool:
+    name: "mempool.space (block height, hash rate)"
+    license_class: attributed
+    attribution: "Source: mempool.space."
+    phase: P2
+    probe: {url: "https://mempool.space/api/blocks/tip/height", expect: text}
+  coinmetrics:
+    name: "Coin Metrics Community API (MVRV; CC BY-NC 4.0)"
+    license_class: attributed
+    attribution: "Source: Coin Metrics Community Data (CC BY-NC 4.0)."
+    budget: {per_6s: 10}
+    phase: P3
+    note: "optional until CapMVRVCur is confirmed free"
+    probe: {url: "https://community-api.coinmetrics.io/v4/timeseries/asset-metrics?assets=btc&metrics=CapMVRVCur&page_size=3", expect: json}
+  # ------------------------------------------------------------- FX (client-side live conversion)
+  open_er_api:
+    name: "open.er-api.com (client-side FX, attribution)"
+    license_class: attributed
+    attribution: "Rates by Exchange Rate API."
+    phase: client
+    probe: {url: "https://open.er-api.com/v6/latest/USD", expect: json}
+  # ------------------------------------------------------------- Japan
+  mof_jgb:
+    name: "Japan MOF JGB yield curve CSV"
+    license_class: attributed
+    attribution: "Source: Ministry of Finance, Japan."
+    phase: P6
+    probe: {url: "https://www.mof.go.jp/english/policy/jgbs/reference/interest_rate/jgbcme.csv", expect: csv}
+  boj:
+    name: "Bank of Japan Time-Series Data Search API (launched 2026-02-18)"
+    license_class: attributed
+    attribution: "Source: Bank of Japan."
+    phase: P6
+    note: "API endpoint to confirm from the launch notice"
+    probe: {url: "https://www.boj.or.jp/en/statistics/outline/notice_2026/not260218a.htm", expect: html}
+  estat:
+    name: "e-Stat API (Japan official statistics)"
+    license_class: attributed
+    attribution: "Source: e-Stat (Statistics Bureau of Japan)."
+    key_env: ESTAT_APP_ID
+    phase: P6
+    probe: {url: "https://api.e-stat.go.jp/rest/3.0/app/json/getStatsList?appId={ESTAT_APP_ID}&searchWord=CPI&limit=1", expect: json}
+  # ------------------------------------------------------------- Vietnam (license unclear -> internal)
+  vcb_fx:
+    name: "Vietcombank exchange rates XML"
+    license_class: internal
+    phase: P6
+    probe: {url: "https://portal.vietcombank.com.vn/Usercontrols/TVPortal.TyGia/pXML.aspx", expect: xml}
+  sjc:
+    name: "SJC gold prices (site reachability)"
+    license_class: internal
+    phase: P6
+    note: "no documented endpoint; reachability only"
+    probe: {url: "https://sjc.com.vn/", expect: html}
+  sbv:
+    name: "State Bank of Vietnam (site reachability)"
+    license_class: internal
+    phase: P6
+    probe: {url: "https://www.sbv.gov.vn/", expect: html}
+  tcbs:
+    name: "TCBS public index bars (vnstock upstream, legacy endpoint)"
+    license_class: internal
+    phase: P6
+    note: "legacy endpoint; may be retired"
+    probe: {url: "https://apipubaws.tcbs.com.vn/stock-insight/v1/stock/bars-long-term?ticker=VNINDEX&type=index&resolution=D&countBack=3&to=1893456000", expect: json}

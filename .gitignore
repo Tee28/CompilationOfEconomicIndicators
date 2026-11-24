@@ -1,0 +1,25 @@
+# Python / tooling
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+
+# Runtime state (HTTP cache, KB index, locks, hook logs, probe dumps)
+.econ/
+
+# Local data store (the durable store is the private econ-data repo)
+data/
+
+# Secrets
+.env
+
+# Web build output and generated data
+web/node_modules/
+web/dist/
+web/public/data/
+
+# Work log (noisy; token stats are rebuilt from transcripts)
+work/activity.log
+
+!**/.gitkeep

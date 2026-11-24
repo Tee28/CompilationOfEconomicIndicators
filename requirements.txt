@@ -1,0 +1,13 @@
+# Pipeline core (python econ.py ...). Hooks use the stdlib only and never import these.
+pyyaml>=6.0
+requests>=2.32
+truststore>=0.10        # use the OS trust store (corporate TLS inspection on the dev machine)
+pydantic>=2.9           # data contract -> JSON Schema -> TypeScript types
+# Data & models
+numpy>=2.1
+pandas>=2.2
+pyarrow>=18.0
+scipy>=1.14
+statsmodels>=0.14.4
+arch>=7.2               # GARCH / EWMA volatility
+scikit-learn>=1.6

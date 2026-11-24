@@ -1,0 +1,124 @@
+"""Source registry commands: `src list`, `src check` (reachability + content-type sanity per source)."""
+from __future__ import annotations
+
+import json
+import os
+import time
+
+from .common import CONFIG, DOCS, STATE, EconError, Result, clip, load_env, load_yaml, redact, utcnow, write_json
+from .http import fill, get, placeholders
+
+
+def registry() -> dict:
+    data = load_yaml(CONFIG / "sources.yaml")
+    src = data.get("sources") or {}
+    if not isinstance(src, dict):
+        raise EconError("config/sources.yaml: 'sources' must be a mapping")
+    return src
+
+
+def _looks_html(body: bytes) -> bool:
+    head = body.lstrip()[:600].lower()
+    return head.startswith(b"<!doctype html") or b"<html" in head
+
+
+def validate(code: int, body: bytes, expect: str) -> tuple[bool, str]:
+    """Return (ok, note) for a probe response."""
+    if code >= 400:
+        snippet = clip(body[:300].decode("utf-8", "replace"), 70)
+        return False, f"HTTP {code}: {snippet}"
+    html = _looks_html(body)
+    if expect == "json":
+        try:
+            json.loads(body.decode("utf-8", "replace"))
+            return True, ""
+        except ValueError:
+            return False, "HTML instead of JSON (block page / captcha / filter?)" if html else "invalid JSON"
+    if expect == "csv":
+        ok = not html and b"," in body[:4000] and b"\n" in body[:4000]
+        return ok, "" if ok else ("HTML instead of CSV" if html else "not CSV")
+    if expect == "xml":
+        ok = body.lstrip()[:1] == b"<" and not html
+        return ok, "" if ok else ("HTML instead of XML" if html else "not XML")
+    if expect == "html":
+        return html, "" if html else "not HTML"
+    if expect == "xls":
+        ok = body[:4] == b"\xd0\xcf\x11\xe0" or body[:2] == b"PK"
+        return ok, "" if ok else ("HTML instead of spreadsheet" if html else "not a spreadsheet")
+    ok = bool(body.strip()) and not html
+    return ok, "" if ok else "empty or HTML"
+
+
+def check_one(sid: str, s: dict, env=None) -> dict:
+    env = os.environ if env is None else env
+    probe = s.get("probe") or {}
+    url_t, headers_t = probe.get("url", ""), probe.get("headers") or {}
+    needed = sorted(set(placeholders(url_t) + placeholders(json.dumps(headers_t))))
+    missing = [n for n in needed if not env.get(n)]
+    row = {"id": sid, "phase": s.get("phase", ""), "license": s.get("license_class", ""), "ok": None,
+           "http": "", "ms": "", "kb": "", "note": ""}
+    if not url_t:
+        row["note"] = "no probe url"
+        return row
+    if missing and not s.get("key_optional"):
+        row["note"] = f"skipped: missing {', '.join(missing)}"
+        return row
+    url = fill(url_t, env)
+    headers = {k: fill(v, env) for k, v in headers_t.items() if fill(v, env)}
+    t0 = time.perf_counter()
+    try:
+        r = get(url, headers=headers)
+    except EconError as e:
+        row.update(ok=False, note=clip(str(e), 110))
+        return row
+    body = r.content or b""
+    ok, note = validate(r.status_code, body, probe.get("expect", "text"))
+    row.update(ok=ok, http=r.status_code, ms=int((time.perf_counter() - t0) * 1000), kb=round(len(body) / 1024, 1),
+               note=redact(note + (" (keyless)" if missing else "")).strip())
+    return row
+
+
+def cmd_list(args) -> Result:
+    reg = registry()
+    rows = [{"id": k, "phase": v.get("phase", ""), "license": v.get("license_class", ""),
+             "key": v.get("key_env", ""), "name": v.get("name", "")} for k, v in reg.items()]
+    if args.phase:
+        rows = [r for r in rows if r["phase"] == args.phase]
+    text = "\n".join(f"{r['id']:<20} {r['phase']:<6} {r['license']:<10} {r['key']:<18} {clip(r['name'], 60)}"
+                     for r in rows)
+    return Result(text, rows)
+
+
+def _where() -> str:
+    if os.environ.get("GITHUB_ACTIONS") == "true":
+        return f"GitHub Actions runner ({os.environ.get('RUNNER_OS', '?')}, {os.environ.get('RUNNER_ARCH', '?')})"
+    return "local machine"
+
+
+def cmd_check(args) -> Result:
+    load_env()
+    reg = registry()
+    ids = [i for i in (args.id or reg.keys())]
+    unknown = [i for i in ids if i not in reg]
+    if unknown:
+        raise EconError(f"unknown source id(s): {', '.join(unknown)}")
+    if args.phase:
+        ids = [i for i in ids if reg[i].get("phase") == args.phase]
+    rows = [check_one(i, reg[i]) for i in ids]
+    mark = {True: "OK  ", False: "FAIL", None: "SKIP"}
+    lines = [f"{mark[r['ok']]} {r['id']:<20} {str(r['http']):<4} {str(r['ms']):>6}ms {str(r['kb']):>8}KB  {r['note']}"
+             for r in rows]
+    n_ok = sum(r["ok"] is True for r in rows)
+    n_fail = sum(r["ok"] is False for r in rows)
+    summary = f"{n_ok} ok · {n_fail} fail · {len(rows) - n_ok - n_fail} skipped · {_where()} · {utcnow()}"
+    report = {"when": utcnow(), "where": _where(), "rows": rows}
+    write_json(STATE / "src-check.json", report)
+    if args.write:
+        md = ["# Source verification", "", f"Last run: {report['when']} on {report['where']}.",
+              "Generated by `python econ.py src check --write` (also run by `.github/workflows/src-check.yml`).", "",
+              "| Result | Source | Phase | License | HTTP | ms | KB | Note |", "|---|---|---|---|---|---|---|---|"]
+        md += [f"| {mark[r['ok']].strip()} | {r['id']} | {r['phase']} | {r['license']} | {r['http']} | {r['ms']} | "
+               f"{r['kb']} | {r['note'].replace('|', '/')} |" for r in rows]
+        DOCS.mkdir(parents=True, exist_ok=True)
+        (DOCS / "source-verification.md").write_text("\n".join(md) + "\n", encoding="utf-8")
+    return Result("\n".join(lines + [summary]), report, 2 if n_fail else 0)

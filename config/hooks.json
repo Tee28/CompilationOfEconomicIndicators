@@ -1,0 +1,37 @@
+{
+  "_comment": "Read by src/econ/hooks.py (stdlib only, so JSON not YAML). Paths are repo-relative POSIX globs (fnmatch: * also matches /).",
+  "main_agent_names": ["", "main"],
+  "token_guard": {
+    "text_max_kb": 40,
+    "always_allow": [".claude/*", "CLAUDE.md"],
+    "deny": {
+      "data/*": "Raw data store. Use `python econ.py ind get <ID>` or `python econ.py digest <market>`.",
+      "*.parquet": "Parquet is binary. Use `python econ.py ind get <ID>` or `python econ.py digest <market>`.",
+      "web/node_modules/*": "Dependencies - never read. Check versions with `npm --prefix web ls <pkg>`.",
+      "web/dist/*": "Build output - read the source in web/src instead.",
+      "web/public/data/*": "Generated site data. Use `python econ.py digest <market>` or read a slice (offset/limit).",
+      ".econ/cache/*": "HTTP cache - use the CLI."
+    }
+  },
+  "owners": {
+    "_comment": "Write/Edit allowlist per subagent (agent_type). Agents not listed here are unrestricted. Main thread is never restricted.",
+    "probe-manager": [".econ/probe/*"],
+    "probe-worker": [".econ/probe/*"],
+    "data-engineer": ["config/sources.yaml", "config/indicators.yaml", "config/calendar.yaml", "config/manual/*", "src/econ/connectors/*", "src/econ/quality/*", "src/econ/store.py", "src/econ/http.py", "src/econ/registry.py", "src/econ/transforms/*", "tests/*", "knowledge/sources/*", "docs/data-sources.md", "docs/source-verification.md", ".claude/agent-memory/data-engineer/*"],
+    "quant-researcher": ["config/composites.yaml", "config/models.yaml", "src/econ/composites/*", "src/econ/models/*", "src/econ/backtest/*", "src/econ/ledger/*", "docs/models/*", "tests/*", "knowledge/methods/*", ".claude/agent-memory/quant-researcher/*"],
+    "frontend-engineer": ["web/*", ".claude/agent-memory/frontend-engineer/*"],
+    "platform-engineer": ["src/econ/publish/*", "src/econ/schemas.py", "src/econ/cli.py", "src/econ/common.py", "src/econ/hooks.py", "src/econ/work.py", "src/econ/context.py", "src/econ/context_recipes.yaml", "src/econ/codemap.py", "src/econ/audit.py", "src/econ/kb.py", "src/econ/doctor.py", "src/econ/probe.py", "src/econ/status.py", "src/econ/sources.py", "econ.py", "tests/*", ".github/*", "docs/ARCHITECTURE.md", "docs/adr/*", "docs/runbook.md", "pyproject.toml", "requirements*.txt", ".claude/agent-memory/platform-engineer/*"],
+    "macro-strategist": ["rulebook/macro.yaml", "rulebook/rates_fx.yaml", "rulebook/vietnam.yaml", "rulebook/japan.yaml", "knowledge/indicators/*", ".claude/agent-memory/macro-strategist/*"],
+    "markets-strategist": ["rulebook/equities.yaml", "rulebook/commodities.yaml", "rulebook/crypto.yaml", "knowledge/indicators/*", ".claude/agent-memory/markets-strategist/*"],
+    "risk-manager": ["docs/risk/*", ".claude/agent-memory/risk-manager/*"],
+    "content-editor": ["rulebook/phrases.vi.yaml", "rulebook/phrases.en.yaml", "content/*", "docs/methodology.md", ".claude/agent-memory/content-editor/*"],
+    "research-lead": ["knowledge/*", ".claude/agent-memory/research-lead/*"],
+    "engineering-manager": [".claude/agent-memory/engineering-manager/*"]
+  },
+  "spawn": {
+    "_comment": "Which subagent types a subagent may spawn (Agent tool). Main thread is never restricted; agents not listed may spawn none.",
+    "probe-manager": ["probe-worker"],
+    "engineering-manager": ["data-engineer", "quant-researcher", "frontend-engineer", "platform-engineer", "content-editor"],
+    "research-lead": ["macro-strategist", "markets-strategist", "risk-manager", "quant-researcher", "content-editor"]
+  }
+}

@@ -1,0 +1,19 @@
+[project]
+name = "econ-outlook-lab"
+version = "0.0.1"
+description = "Economic indicators, composites and probabilistic market outlooks published as a static site."
+requires-python = ">=3.12"
+
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP"]
+ignore = ["E501"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+addopts = "-q"
