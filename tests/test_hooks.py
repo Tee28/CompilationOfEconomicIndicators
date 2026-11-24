@@ -36,6 +36,11 @@ def test_token_guard_paths_and_allowlist(root):
     pq.write_bytes(b"PAR1")
     r = run_hook(root, "pre-read", {"tool_input": {"file_path": str(pq)}})
     assert _decision(r.stdout) == "deny" and "ind get" in r.stdout
+    site = root / "web" / "public" / "data" / "overview.json"
+    site.parent.mkdir(parents=True)
+    site.write_text("{}", encoding="utf-8")
+    assert _decision(run_hook(root, "pre-read", {"tool_input": {"file_path": str(site)}}).stdout) == "deny"
+    assert run_hook(root, "pre-read", {"tool_input": {"file_path": str(site), "limit": 20}}).stdout == ""
     agent_md = root / ".claude" / "agents" / "big.md"
     agent_md.parent.mkdir(parents=True)
     agent_md.write_text("y" * 60_000, encoding="utf-8")

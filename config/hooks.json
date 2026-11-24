@@ -9,7 +9,7 @@
       "*.parquet": "Parquet is binary. Use `python econ.py ind get <ID>` or `python econ.py digest <market>`.",
       "web/node_modules/*": "Dependencies - never read. Check versions with `npm --prefix web ls <pkg>`.",
       "web/dist/*": "Build output - read the source in web/src instead.",
-      "web/public/data/*": "Generated site data. Use `python econ.py digest <market>` or read a slice (offset/limit).",
+      "web/public/data/*": {"hint": "Generated site data. Use `python econ.py digest <market>`, or read a slice (offset/limit).", "allow_slice": true},
       ".econ/cache/*": "HTTP cache - use the CLI."
     }
   },

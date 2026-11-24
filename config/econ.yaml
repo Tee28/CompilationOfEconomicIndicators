@@ -7,7 +7,8 @@ site:
 http:
   timeout_s: 25
   truststore: true                # OS trust store (corporate TLS inspection on the dev machine)
-  user_agent: "data-client/0.1"   # generic: never put personal or project details in requests
+  user_agent: ""                  # "" = library default (python-requests/x). Generic, never personal details.
+                                  # IMF's CDN rejects custom and fake-browser UAs (403) but accepts the default.
 
 schedule:                         # documented here, enforced in .github/workflows/update-data.yml
   us_close_utc: "17 23 * * *"

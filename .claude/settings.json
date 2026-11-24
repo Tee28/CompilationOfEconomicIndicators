@@ -1,0 +1,67 @@
+{
+  "env": {
+    "PYTHONUTF8": "1",
+    "PYTHONIOENCODING": "utf-8",
+    "CLAUDE_CODE_MAX_SUBAGENT_SPAWN_DEPTH": "2"
+  },
+  "permissions": {
+    "allow": [
+      "Bash(python econ.py *)",
+      "Bash(python -m pytest *)",
+      "Bash(npm --prefix web run *)"
+    ],
+    "deny": [
+      "Read(/.env)",
+      "Read(/.venv/**)",
+      "Read(/data/**)",
+      "Read(/web/node_modules/**)"
+    ]
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|resume|clear|compact",
+        "hooks": [
+          {"type": "command", "command": "python", "args": ["${CLAUDE_PROJECT_DIR}/econ.py", "hook", "session-start"], "timeout": 20}
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Read",
+        "hooks": [
+          {"type": "command", "command": "python", "args": ["${CLAUDE_PROJECT_DIR}/econ.py", "hook", "pre-read"], "timeout": 10}
+        ]
+      },
+      {
+        "matcher": "Write|Edit|NotebookEdit|Agent|Task",
+        "hooks": [
+          {"type": "command", "command": "python", "args": ["${CLAUDE_PROJECT_DIR}/econ.py", "hook", "pre-write"], "timeout": 10}
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {"type": "command", "command": "python", "args": ["${CLAUDE_PROJECT_DIR}/econ.py", "hook", "post-edit"], "timeout": 20}
+        ]
+      }
+    ],
+    "SubagentStop": [
+      {
+        "hooks": [
+          {"type": "command", "command": "python", "args": ["${CLAUDE_PROJECT_DIR}/econ.py", "hook", "subagent-stop"], "timeout": 10}
+        ]
+      }
+    ],
+    "PreCompact": [
+      {
+        "matcher": "manual|auto",
+        "hooks": [
+          {"type": "command", "command": "python", "args": ["${CLAUDE_PROJECT_DIR}/econ.py", "hook", "pre-compact"], "timeout": 20}
+        ]
+      }
+    ]
+  }
+}

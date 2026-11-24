@@ -116,7 +116,10 @@ def report(args) -> Result:
         "Check the PreToolUse Read hook matcher and config/hooks.json token_guard.")
     add("ownership guard denies foreign write", "PASS" if "write-deny" in marks else "FAIL",
         json.dumps(marks.get("write-deny", {}), ensure_ascii=False)[:120],
-        "Check the PreToolUse Write|Edit hook and config/hooks.json owners.")
+        "Check the PreToolUse Write|Edit hook and config/hooks.json owners (needs probe-worker: new session).")
+    add("spawn guard denies unlisted spawn", "PASS" if "spawn-deny" in marks else "FAIL",
+        json.dumps(marks.get("spawn-deny", {}), ensure_ascii=False)[:120],
+        "Check the PreToolUse Agent|Task matcher and config/hooks.json spawn.")
     worker_stop = [p for p in stops if agent_of(p) == "probe-worker"]
     mgr_stop = [p for p in stops if agent_of(p) == "probe-manager"]
     mgr_msg = " ".join(str((p.get("data") or {}).get("last_assistant_message") or "") for p in mgr_stop)
@@ -133,12 +136,12 @@ def report(args) -> Result:
     add("SubagentStop fields", "PASS" if have == fields else ("FAIL" if stops else "SKIP"),
         f"present: {', '.join(sorted(have)) or 'none'}", "Log agent name only; skip token accounting.")
     tok = {"in": 0, "out": 0, "cache_r": 0, "cache_w": 0, "messages": 0}
-    for p in mgr_stop + worker_stop:
+    for p in stops:
         t = transcript_tokens((p.get("data") or {}).get("agent_transcript_path") or "")
         for k in tok:
             tok[k] += t[k]
     add("transcript token parse", "PASS" if tok["messages"] and (tok["in"] + tok["out"]) > 0 else
-        ("FAIL" if (mgr_stop or worker_stop) else "SKIP"), json.dumps(tok),
+        ("FAIL" if stops else "SKIP"), json.dumps(tok),
         "Transcript format differs: inspect one transcript line and adapt transcript_tokens().")
     sk = marks.get("skill-bang")
     add("skill `!` command runs", "PASS" if sk else "FAIL",

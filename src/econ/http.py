@@ -31,7 +31,9 @@ def session():
         import requests
 
         _session = requests.Session()
-        _session.headers["User-Agent"] = cfg("http.user_agent", "data-client/0.1")
+        ua = cfg("http.user_agent", "")
+        if ua:
+            _session.headers["User-Agent"] = ua
     return _session
 
 

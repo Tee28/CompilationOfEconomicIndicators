@@ -15,6 +15,7 @@ sources:
     probe: {url: "https://api.stlouisfed.org/fred/series/observations?series_id=DGS10&api_key={FRED_API_KEY}&file_type=json&sort_order=desc&limit=3", expect: json}
   imf_datamapper:
     name: "IMF DataMapper (WEO)"
+    note: "CDN returns 403 for custom or fake-browser User-Agents; works with the library default UA (2026-11-24)"
     license_class: attributed
     attribution: "Source: IMF World Economic Outlook (DataMapper)."
     phase: P2
@@ -147,7 +148,7 @@ sources:
     attribution: "Source: Coin Metrics Community Data (CC BY-NC 4.0)."
     budget: {per_6s: 10}
     phase: P3
-    note: "optional until CapMVRVCur is confirmed free"
+    note: "CapMVRVCur confirmed free on 2026-11-24 (CC BY-NC: no ads on the site)"
     probe: {url: "https://community-api.coinmetrics.io/v4/timeseries/asset-metrics?assets=btc&metrics=CapMVRVCur&page_size=3", expect: json}
   # ------------------------------------------------------------- FX (client-side live conversion)
   open_er_api:
@@ -187,7 +188,7 @@ sources:
     name: "SJC gold prices (site reachability)"
     license_class: internal
     phase: P6
-    note: "no documented endpoint; reachability only"
+    note: "403 anti-bot page from the GitHub runner on 2026-11-24; needs another route or manual input (P6)"
     probe: {url: "https://sjc.com.vn/", expect: html}
   sbv:
     name: "State Bank of Vietnam (site reachability)"
@@ -198,5 +199,5 @@ sources:
     name: "TCBS public index bars (vnstock upstream, legacy endpoint)"
     license_class: internal
     phase: P6
-    note: "legacy endpoint; may be retired"
+    note: "RETIRED: 404 Service not found on 2026-11-24 (runner and local). Find the current vnstock upstream in P6."
     probe: {url: "https://apipubaws.tcbs.com.vn/stock-insight/v1/stock/bars-long-term?ticker=VNINDEX&type=index&resolution=D&countBack=3&to=1893456000", expect: json}

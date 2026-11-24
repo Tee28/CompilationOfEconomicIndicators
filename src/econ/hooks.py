@@ -111,17 +111,22 @@ def pre_read(data: dict):
     rel = _rel(fp)
     if rel and _match(rel, c.get("always_allow")):
         return
+    sliced = bool(ti.get("limit") or ti.get("offset"))
     if rel:
-        for pat, hint in (c.get("deny") or {}).items():
-            if fnmatch.fnmatch(rel, pat):
-                _deny(f"Token guard: {rel} is off-limits for Read. {hint}")
-                _probe_mark("read-deny", {"path": rel, "agent": _agent(data) or "main", "why": "path"})
+        for pat, rule in (c.get("deny") or {}).items():
+            if not fnmatch.fnmatch(rel, pat):
+                continue
+            rule = rule if isinstance(rule, dict) else {"hint": str(rule)}
+            if rule.get("allow_slice") and sliced:
                 return
+            _deny(f"Token guard: {rel} is off-limits for a full Read. {rule.get('hint', '')}")
+            _probe_mark("read-deny", {"path": rel, "agent": _agent(data) or "main", "why": "path"})
+            return
     p = Path(fp)
     if not p.is_file() or p.suffix.lower() in SKIP_SIZE_CHECK:
         return
     size_kb = p.stat().st_size / 1024
-    if size_kb > float(c.get("text_max_kb", 40)) and not (ti.get("limit") or ti.get("offset")):
+    if size_kb > float(c.get("text_max_kb", 40)) and not sliced:
         _deny(f"Token guard: {p.name} is {size_kb:.0f}KB. Read a slice (offset/limit), or use the CLI first: "
               "`python econ.py status`, `context <role> <target>`, `ind get <ID>`, `digest <market>`, "
               "`kb search \"...\"`; for code see docs/CODEMAP.md.")
