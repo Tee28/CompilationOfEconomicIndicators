@@ -1,0 +1,65 @@
+# Composite registry (quant-researcher). Engine: src/econ/composites/. Contract: CompositeSeries (schemas.py).
+# Pipeline per member (all as-of safe, month-end grid; the last point is the as-of date itself):
+#   store vintage view (publication lag + vintages) -> each observation placed at its known_at date
+#   -> sampled per grid period by `agg` (last | mean over values that became known in the period)
+#   -> `transform` on the grid (level | chg_<N>m difference | pct_<N>m growth, N months)
+#   -> sign (+1 / -1, so that a higher composite always means what `orientation` says)
+#   -> EXPANDING z-score (min_periods months; no full-sample stats) clipped at +-clip
+#   -> weighted mean over members present at that date; weights renormalised over present members;
+#      value withheld (null) when present weight share < min_coverage.
+# Percentile = expanding rank of the composite among its own past values (0-100); label from label_bands.
+# License rule: composite license = most restrictive member license (open < attributed < internal).
+#   internal => display class internal: the site shows percentile + label only, never the level.
+#   `license:` below is asserted against the derived value (mismatch = config error).
+# IDs are stable (lowercase like indicator ids); changing members/weights = bump `version` of that composite.
+version: 1
+defaults:
+  zscore_min_periods: 36      # months of member history before a z-score is emitted
+  clip: 4.0                   # winsorise member z at +-4 sd (one print must not dominate)
+  percentile_min_periods: 36  # months of composite history before a percentile/label is emitted
+  min_coverage: 0.6           # share of configured weight that must be present
+  max_ffill: {D: 1, W: 1, M: 2, Q: 4}  # grid periods a member value may be carried forward
+  label_bands: [20, 40, 60, 80]          # percentile cut points (lower bound inclusive) -> 5 labels
+
+composites:
+  growth:
+    version: 1
+    name: "US growth / activity"
+    name_vi: "Tăng trưởng / hoạt động"
+    orientation: "higher = stronger real activity"
+    license: attributed
+    labels_vi: ["Rất yếu", "Yếu", "Trung tính", "Khá", "Mạnh"]
+    members:
+      payems:   {sign: 1,  weight: 0.25, agg: last, transform: pct_12m}   # payroll growth y/y
+      indpro:   {sign: 1,  weight: 0.20, agg: last, transform: pct_12m}   # industrial production y/y
+      unrate:   {sign: -1, weight: 0.20, agg: last, transform: chg_3m}    # rising unemployment = weaker (Sahm-type)
+      icsa:     {sign: -1, weight: 0.15, agg: mean, transform: pct_12m}   # monthly-avg claims y/y
+      oecd_cli: {sign: 1,  weight: 0.20, agg: last, transform: level}     # amplitude-adjusted CLI (~100)
+
+  inflation_policy:
+    version: 1
+    name: "US inflation, policy and liquidity pressure"
+    name_vi: "Lạm phát, chính sách và thanh khoản"
+    orientation: "higher = hotter inflation / tighter policy and liquidity"
+    license: attributed
+    labels_vi: ["Rất nới lỏng", "Nới lỏng", "Trung tính", "Thắt chặt", "Rất thắt chặt"]
+    members:
+      cpi:      {sign: 1,  weight: 0.30, agg: last, transform: pct_12m}   # headline CPI y/y
+      fedfunds: {sign: 1,  weight: 0.20, agg: last, transform: chg_12m}   # policy-rate change over 12M
+      dgs2:     {sign: 1,  weight: 0.20, agg: mean, transform: chg_12m}   # market-implied policy path
+      t10y2y:   {sign: -1, weight: 0.15, agg: mean, transform: level}     # flatter/inverted curve = tighter
+      oil_pink: {sign: 1,  weight: 0.15, agg: last, transform: pct_12m}   # energy price pressure (attributed WB, not WTI)
+
+  financial_conditions:
+    version: 1
+    name: "Financial conditions / risk stress"
+    name_vi: "Điều kiện tài chính / rủi ro"
+    orientation: "higher = tighter conditions / more risk stress"
+    license: internal          # VIX, HY OAS, Baa spread are internal-class -> level hidden on the site
+    labels_vi: ["Rất thuận lợi", "Thuận lợi", "Trung tính", "Thận trọng", "Căng thẳng"]
+    members:
+      nfci:      {sign: 1, weight: 0.30, agg: last, transform: level}     # Chicago Fed NFCI (>0 = tighter)
+      vix:       {sign: 1, weight: 0.20, agg: mean, transform: level}     # monthly-avg implied vol
+      hy_oas:    {sign: 1, weight: 0.15, agg: mean, transform: level}     # short FRED history (~3y): often absent
+      baa10y:    {sign: 1, weight: 0.20, agg: mean, transform: level}     # long-history credit spread
+      usd_broad: {sign: 1, weight: 0.15, agg: mean, transform: pct_12m}   # strong USD = tighter global liquidity

@@ -1,0 +1,229 @@
+{
+ "tasks": [
+  {
+   "id": "T001",
+   "title": "Contracts: pydantic schemas (manifest/overview/market/forecast record/health), CLI wiring for fetch/compute/forecast/ledger/publish/update, ADR, site fixtures",
+   "owner": "platform-engineer",
+   "deps": [],
+   "inputs": [
+    "docs/ARCHITECTURE.md",
+    "src/econ/cli.py"
+   ],
+   "outputs": [
+    "src/econ/schemas.py",
+    "src/econ/cli.py",
+    "docs/adr/0001-live-slice-contracts.md",
+    "tests/fixtures/site/"
+   ],
+   "status": "done",
+   "note": "",
+   "created": "2026-11-24T14:03:05",
+   "updated": "2026-11-24T14:07:18"
+  },
+  {
+   "id": "T002",
+   "title": "Registry+store+transforms: config/indicators.yaml (~20 ind), sources series (fred,pinksheet,oecd), store.py append-only vintages, registry.py, transforms",
+   "owner": "data-engineer",
+   "deps": [
+    "T001"
+   ],
+   "inputs": [
+    "config/sources.yaml",
+    "src/econ/schemas.py"
+   ],
+   "outputs": [
+    "config/indicators.yaml",
+    "src/econ/registry.py",
+    "src/econ/store.py",
+    "src/econ/transforms/"
+   ],
+   "status": "done",
+   "note": "",
+   "created": "2026-11-24T14:03:05",
+   "updated": "2026-11-24T14:17:31"
+  },
+  {
+   "id": "T003",
+   "title": "Connectors: fred, worldbank_pinksheet, oecd (+gold/oil) with fixtures, budgets, quality checks, fetch fn",
+   "owner": "data-engineer",
+   "deps": [
+    "T002"
+   ],
+   "inputs": [
+    "config/indicators.yaml",
+    "src/econ/http.py"
+   ],
+   "outputs": [
+    "src/econ/connectors/",
+    "src/econ/quality/",
+    "tests/connectors/"
+   ],
+   "status": "done",
+   "note": "",
+   "created": "2026-11-24T14:03:06",
+   "updated": "2026-11-24T14:28:14"
+  },
+  {
+   "id": "T004",
+   "title": "Composites: 3 composites config + engine (as-of safe z-score, weights)",
+   "owner": "quant-researcher",
+   "deps": [
+    "T002"
+   ],
+   "inputs": [
+    "config/indicators.yaml",
+    "src/econ/registry.py"
+   ],
+   "outputs": [
+    "config/composites.yaml",
+    "config/models.yaml",
+    "src/econ/composites/"
+   ],
+   "status": "done",
+   "note": "",
+   "created": "2026-11-24T14:03:06",
+   "updated": "2026-11-24T14:28:14"
+  },
+  {
+   "id": "T005",
+   "title": "Models+forecast+ledger: baselines (RW, climatology), simple logistic/ridge, short+medium horizons, ledger append/score/verify/health, model card",
+   "owner": "quant-researcher",
+   "deps": [
+    "T004"
+   ],
+   "inputs": [
+    "config/composites.yaml",
+    "src/econ/schemas.py"
+   ],
+   "outputs": [
+    "src/econ/models/",
+    "src/econ/ledger/",
+    "docs/models/live-slice.md"
+   ],
+   "status": "done",
+   "note": "",
+   "created": "2026-11-24T14:03:06",
+   "updated": "2026-11-24T14:54:53"
+  },
+  {
+   "id": "T006",
+   "title": "VI phrase templates for narrative (probability wording, confidence Low, disclaimers) + methodology stub",
+   "owner": "content-editor",
+   "deps": [
+    "T001"
+   ],
+   "inputs": [
+    "src/econ/schemas.py"
+   ],
+   "outputs": [
+    "rulebook/phrases.vi.yaml",
+    "docs/methodology.md"
+   ],
+   "status": "done",
+   "note": "",
+   "created": "2026-11-24T14:03:07",
+   "updated": "2026-11-24T14:17:31"
+  },
+  {
+   "id": "T007",
+   "title": "Publish+narrative+license gate+econ update orchestrator + update-data.yml + deploy-pages.yml + e2e dry-run test",
+   "owner": "platform-engineer",
+   "deps": [
+    "T003",
+    "T005",
+    "T006"
+   ],
+   "inputs": [
+    "src/econ/schemas.py",
+    "rulebook/phrases.vi.yaml"
+   ],
+   "outputs": [
+    "src/econ/publish/",
+    ".github/workflows/update-data.yml",
+    ".github/workflows/deploy-site.yml",
+    "tests/test_e2e_slice.py"
+   ],
+   "status": "done",
+   "note": "",
+   "created": "2026-11-24T14:03:07",
+   "updated": "2026-11-24T15:06:56"
+  },
+  {
+   "id": "T008",
+   "title": "Web: Vite+React+TS+ECharts scaffold, VI dark UI (overview, market pages incl. gold/oil/US equities, method), generated types, vitest, build",
+   "owner": "frontend-engineer",
+   "deps": [
+    "T001"
+   ],
+   "inputs": [
+    "tests/fixtures/site/",
+    "src/econ/schemas.py"
+   ],
+   "outputs": [
+    "web/"
+   ],
+   "status": "blocked",
+   "note": "npm registry unreachable via proxy; code written, untested (typecheck/test/build need network or CI)",
+   "created": "2026-11-24T14:03:08",
+   "updated": "2026-11-24T14:17:32"
+  },
+  {
+   "id": "T009",
+   "title": "Web integration against real publish output + size budget",
+   "owner": "frontend-engineer",
+   "deps": [
+    "T007",
+    "T008"
+   ],
+   "inputs": [
+    "web/public/data"
+   ],
+   "outputs": [
+    "web/"
+   ],
+   "status": "todo",
+   "note": "",
+   "created": "2026-11-24T14:03:08",
+   "updated": "2026-11-24T14:03:08"
+  },
+  {
+   "id": "T010",
+   "title": "store.read_vintages public API (note N001) + resolve N001",
+   "owner": "data-engineer",
+   "deps": [],
+   "inputs": [
+    "src/econ/store.py",
+    "src/econ/composites/engine.py"
+   ],
+   "outputs": [
+    "src/econ/store.py"
+   ],
+   "status": "done",
+   "note": "",
+   "created": "2026-11-24T14:28:31",
+   "updated": "2026-11-24T14:43:38"
+  },
+  {
+   "id": "T011",
+   "title": "Workflows: update-data.yml (cron+manual, fetch->update->ledger commit->publish), deploy-site.yml (Pages), ci.yml; actionlint-style local validation; e2e dry-run test",
+   "owner": "platform-engineer",
+   "deps": [
+    "T007"
+   ],
+   "inputs": [
+    ".github/workflows/src-check.yml",
+    "docs/ARCHITECTURE.md"
+   ],
+   "outputs": [
+    ".github/workflows/update-data.yml",
+    ".github/workflows/deploy-site.yml",
+    ".github/workflows/ci.yml",
+    "tests/test_e2e_slice.py"
+   ],
+   "status": "done",
+   "note": "",
+   "created": "2026-11-24T14:54:53",
+   "updated": "2026-11-24T15:22:09"
+  }
+ ]
+}

@@ -1,0 +1,32 @@
+{
+ "schema_version": "1.0.0",
+ "data_asof": "2026-11-21",
+ "generated_at": "2026-11-22T00:17:00Z",
+ "files": [
+  {
+   "name": "global_macro.82096e4a.json",
+   "hash": "82096e4aa3c6af19aa29219eb94fa51de1b7d737acba739df8bcf6f78c645477",
+   "bytes": 1972
+  },
+  {
+   "name": "us_equities.5fa6d74c.json",
+   "hash": "5fa6d74c97dc4844ba7ccfc15cd1d4715185fbd37c17922bcb459fb5b45e3203",
+   "bytes": 1850
+  },
+  {
+   "name": "gold.4e2a64d9.json",
+   "hash": "4e2a64d938320dfe9778f246e48f115e34e2ef47b5b2de288f5a4d2b53aed5ea",
+   "bytes": 1931
+  },
+  {
+   "name": "oil.76592a64.json",
+   "hash": "76592a64d08eb92f53c731be490a6442eeb30b58b9e8c4aa3bacf1417302f988",
+   "bytes": 1925
+  },
+  {
+   "name": "overview.af4f4dd1.json",
+   "hash": "af4f4dd1fff85d881320b0ea6852a709dd6c81449f109d5c75b12186a7ce0b45",
+   "bytes": 1421
+  }
+ ]
+}

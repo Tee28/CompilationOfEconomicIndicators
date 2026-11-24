@@ -12,6 +12,8 @@ sources:
     key_env: FRED_API_KEY
     budget: {per_minute: 100}
     phase: P2
+    series: [SP500, VIXCLS, DGS10, DGS2, T10Y2Y, FEDFUNDS, CPIAUCSL, UNRATE, PAYEMS, INDPRO, ICSA, BAMLH0A0HYM2, NFCI, DTWEXBGS, DCOILWTICO, DCOILBRENTEU, BAA10Y]
+    history_note: "SP500 on FRED has ~10y of daily history only; ICE BofA series 3y; use pull-site/other source for longer"
     probe: {url: "https://api.stlouisfed.org/fred/series/observations?series_id=DGS10&api_key={FRED_API_KEY}&file_type=json&sort_order=desc&limit=3", expect: json}
   imf_datamapper:
     name: "IMF DataMapper (WEO)"
@@ -39,6 +41,7 @@ sources:
     attribution: "Source: World Bank Commodity Price Data (The Pink Sheet), CC BY 4.0."
     phase: P2
     note: "the monthly xlsx link changes; discover it from this page"
+    series: [GOLD, CRUDE_PETRO]   # Pink Sheet monthly columns: Gold (USD/toz), Crude oil average (USD/bbl)
     probe: {url: "https://www.worldbank.org/en/research/commodity-markets", expect: html}
   oecd:
     name: "OECD Data Explorer SDMX (CLI, BCI, CCI)"
@@ -46,6 +49,7 @@ sources:
     attribution: "Source: OECD."
     budget: {per_hour: 60}
     phase: P2
+    series: ["USA.M.LI.IX._Z.AA.IX._Z.H"]   # CLI amplitude adjusted, US; exact SDMX key confirmed by the connector (T003)
     probe: {url: "https://sdmx.oecd.org/public/rest/dataflow/OECD.SDD.STES/DSD_STES@DF_CLI/latest", expect: xml}
   ecb:
     name: "ECB Data Portal API"

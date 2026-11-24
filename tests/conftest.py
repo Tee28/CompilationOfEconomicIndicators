@@ -33,3 +33,31 @@ def run_cli(root: Path, *args: str) -> subprocess.CompletedProcess:
     env = dict(os.environ, ECON_ROOT=str(root), PYTHONUTF8="1", ECON_NO_VENV="1")
     return subprocess.run([sys.executable, str(LAUNCHER), *args], capture_output=True, text=True, encoding="utf-8",
                           env=env, timeout=120)
+
+
+def synth_frame(specs: dict, ids, start="2005-01-01", end="2026-11-20", seed=7):
+    """Synthetic random-walk levels (positive) for registry indicators, one backfill vintage."""
+    import numpy as np
+    import pandas as pd
+
+    rng = np.random.default_rng(seed)
+    rows = []
+    for i, iid in enumerate(sorted(ids)):
+        sp = specs[iid]
+        d = pd.date_range(start, end, freq={"D": "B", "W": "W-SAT", "M": "MS", "Q": "QS"}[sp.freq])
+        v = 100.0 * np.exp(np.cumsum(rng.normal(0.0005, 0.01, len(d)))) + i
+        rows.append(pd.DataFrame({"source": sp.source, "series_id": sp.series, "date": d, "value": v,
+                                  "fetched_at": "2026-11-21T00:00:00Z"}))
+    return pd.concat(rows, ignore_index=True)
+
+
+@pytest.fixture(scope="session")
+def synth_store(tmp_path_factory):
+    """Store with every registry indicator (2005-2026, synthetic): models + ledger tests."""
+    from econ import registry, store
+    from econ.common import Paths
+
+    specs = registry.load()
+    p = Paths(data=tmp_path_factory.mktemp("synth_store"))
+    store.append(synth_frame(specs, specs), p)
+    return p

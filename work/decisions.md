@@ -3,3 +3,6 @@
 - 2026-11-24 | Owner | - | Plan v2 approved; start with 10 subagents and split later; P0 includes creating Tee28/CompilationOfEconomicIndicators (public) + Tee28/econ-data (private)
 - 2026-11-24 | Claude | G0 | No settings `agent` key; generic library-default User-Agent (IMF CDN blocks custom UAs); sources: drop Stooq/Twelve Data, CoinMetrics MVRV confirmed free (CC BY-NC)
 - 2026-11-24 | Owner | G0 | G0 approved: probe all PASS; src-check 25 ok (binance/sjc/tcbs excluded); keys FRED/EIA/CoinGecko still pending
+- 2026-11-24 | Owner | G1 | P2 live slice scope: global macro + US equities + gold + oil; horizons short (1-3m) and medium (6-12m); other markets deferred to G2
+- 2026-11-24 | Owner | G1 | P2 outward actions: write cron/deploy workflow files and test locally only; no push, no Pages enable, no new secrets this round
+- 2026-11-24 | Owner | - | Owner added Bash(git status *) and Bash(git diff *) to .claude/settings.json allow list for /wrap

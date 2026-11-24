@@ -1,0 +1,94 @@
+{
+ "schema_version": "1.0.0",
+ "market": "oil",
+ "title_vi": "Dầu thô",
+ "asof": "2026-11-21",
+ "horizons": [
+  {
+   "key": "short",
+   "window": "1-3m",
+   "p_up": 0.55,
+   "return_band": {
+    "p10": -0.04,
+    "p50": 0.01,
+    "p90": 0.06
+   },
+   "confidence": "Low",
+   "skill": {
+    "vs_random_walk": -0.01,
+    "vs_climatology": -0.02,
+    "n_eff": 24,
+    "beats_baselines": false
+   },
+   "drivers": [
+    {
+     "indicator": "fin_conditions",
+     "label_vi": "Điều kiện tài chính",
+     "contribution": 0.12,
+     "direction": "up"
+    },
+    {
+     "indicator": "real_yield",
+     "label_vi": "Lãi suất thực",
+     "contribution": -0.05,
+     "direction": "down"
+    }
+   ],
+   "narrative_vi": "Ngắn hạn: nghiêng nhẹ về tăng, độ tin cậy thấp."
+  },
+  {
+   "key": "medium",
+   "window": "6-12m",
+   "p_up": 0.6,
+   "return_band": {
+    "p10": -0.08,
+    "p50": 0.05,
+    "p90": 0.17
+   },
+   "confidence": "Med",
+   "skill": {
+    "vs_random_walk": 0.03,
+    "vs_climatology": 0.02,
+    "n_eff": 24,
+    "beats_baselines": true
+   },
+   "drivers": [
+    {
+     "indicator": "fin_conditions",
+     "label_vi": "Điều kiện tài chính",
+     "contribution": 0.12,
+     "direction": "up"
+    },
+    {
+     "indicator": "real_yield",
+     "label_vi": "Lãi suất thực",
+     "contribution": -0.05,
+     "direction": "down"
+    }
+   ],
+   "narrative_vi": "Trung hạn: dải lợi suất rộng, độ tin cậy vừa."
+  }
+ ],
+ "series": [
+  {
+   "id": "wti",
+   "name_vi": "Dầu WTI",
+   "unit": "USD/thùng",
+   "license": "open",
+   "attribution": "EIA",
+   "stale": false,
+   "dates": [
+    "2026-08-31",
+    "2026-09-30",
+    "2026-10-31"
+   ],
+   "values": [
+    70.1,
+    68.4,
+    72.0
+   ]
+  }
+ ],
+ "narrative_vi": "Dầu thô: xác suất tăng ở mức vừa phải, độ tin cậy được nêu rõ.",
+ "disclaimer_vi": "Không phải lời khuyên đầu tư"
+}

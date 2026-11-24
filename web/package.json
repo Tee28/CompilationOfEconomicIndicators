@@ -1,0 +1,13 @@
+{
+  "name": "econ-outlook-web",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "gen:types": "node scripts/gen-types.mjs"
+  }
+}

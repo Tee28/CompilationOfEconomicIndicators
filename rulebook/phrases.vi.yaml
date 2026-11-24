@@ -1,0 +1,71 @@
+# Vietnamese deterministic templates. Slots in {braces}. Renderer picks keys by number, never by feel.
+# Band keys follow financial-writing-vi scale on p_up (percent): b85_100 b70_85 b55_70 b45_55 b30_45 b15_30 b0_15
+# (lower bound inclusive). Percent slots are pre-formatted by renderer (e.g. "62%"); p10/p50/p90 as "-4.0%".
+_meta:
+  version: 1
+  bands: [b0_15, b15_30, b30_45, b45_55, b55_70, b70_85, b85_100]
+  confidence_keys: [High, Med, Low]
+  common_slots: [market_name, horizon, asof, confidence_vi]
+  templates:
+    short.headline: [market_name, prob_phrase, p_up, horizon, confidence_vi, asof]
+    short.confidence_note: []
+    short.baseline_note: [n_eff]
+    medium.headline: [market_name, horizon, p10, p50, p90, confidence_vi, asof]
+    medium.skew: [p50]
+    medium.scenario: [p10, p90, driver]
+    driver.up: [driver]
+    driver.down: [driver]
+    driver.none: []
+    footer.fred: []
+    disclaimer: []
+    data_asof: [asof]
+  banned_words: ["nên mua", "nên bán", "chắc chắn", "đảm bảo", "khuyến nghị", "cơ hội vàng", "bắt đáy"]
+
+markets:
+  global_macro: {name: "Kinh tế toàn cầu", subject: "triển vọng tăng trưởng toàn cầu"}
+  us_equities: {name: "Cổ phiếu Mỹ", subject: "chỉ số cổ phiếu Mỹ"}
+  gold: {name: "Vàng", subject: "giá vàng"}
+  oil: {name: "Dầu thô", subject: "giá dầu"}
+
+horizons:
+  short: "1-3 tháng tới"
+  medium: "6-12 tháng tới"
+
+confidence_vi: {High: "Cao", Med: "Trung bình", Low: "Thấp"}
+
+# Short horizon: P(up) headline. {prob_phrase} comes from this table by band.
+prob_phrase:
+  b85_100: "rất có khả năng tăng"
+  b70_85: "khả năng cao tăng"
+  b55_70: "nghiêng về tăng"
+  b45_55: "không nghiêng về bên nào"
+  b30_45: "nghiêng về giảm"
+  b15_30: "khả năng thấp tăng"
+  b0_15: "rất khó tăng"
+
+short:
+  headline: "{market_name}: {prob_phrase} ({p_up}) trong {horizon}, độ tin cậy {confidence_vi} (tính đến {asof})."
+  confidence_note:
+    High: "Mô hình đã vượt các mức so sánh cơ bản trong kiểm định ngoài mẫu."
+    Med: "Mô hình nhỉnh hơn mức so sánh cơ bản, nhưng biên độ còn nhỏ."
+    Low: "Mô hình chưa vượt mức so sánh cơ bản, nên con số chỉ mang tính tham khảo."
+  baseline_note: "Kiểm định dựa trên {n_eff} mốc độc lập (n_eff)."
+
+# Medium horizon: return ranges and scenarios, no point P(up).
+medium:
+  headline: "{market_name}: trong {horizon}, lợi suất kỳ vọng nằm trong khoảng {p10} đến {p90}, giá trị trung vị {p50}; độ tin cậy {confidence_vi} (tính đến {asof})."
+  skew:
+    pos: "Trung vị dương ({p50}) cho thấy phân phối hơi lệch về phía tăng, nhưng dải rộng nghĩa là kết quả giảm vẫn có thể xảy ra."
+    neg: "Trung vị âm ({p50}) cho thấy phân phối hơi lệch về phía giảm, nhưng dải rộng nghĩa là kết quả tăng vẫn có thể xảy ra."
+  scenario: "Nếu {driver} tiếp tục diễn biến như hiện nay thì lợi suất có thể tiến gần {p90}; nếu xu hướng đảo chiều thì có thể gần {p10}."
+
+# Drivers: direction comes from model contribution sign, so it always matches the headline model.
+driver:
+  up: "{driver} đang hỗ trợ xu hướng tăng."
+  down: "{driver} đang gây áp lực giảm."
+  none: "Chưa có yếu tố nào đóng góp nổi bật."
+
+data_asof: "Dữ liệu tính đến {asof}."
+footer:
+  fred: "Một phần dữ liệu lấy từ FRED, Cục Dự trữ Liên bang St. Louis (Federal Reserve Bank of St. Louis). Trang web không được FRED bảo trợ."
+disclaimer: "Không phải lời khuyên đầu tư. Dự báo mang tính xác suất và có thể sai."

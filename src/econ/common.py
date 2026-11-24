@@ -182,3 +182,20 @@ def rel(path) -> str:
         return Path(path).resolve().relative_to(ROOT.resolve()).as_posix()
     except ValueError:
         return Path(path).as_posix()
+
+
+# ---------------------------------------------------------------- live-slice paths
+class Paths:
+    """Where the pipeline reads/writes. Defaults: data/ (raw store), ledger/, web/public/data/.
+    `--out-dir D` redirects ledger -> D/ledger and site JSON -> D/web/public/data (tests, dry runs)."""
+
+    def __init__(self, data=None, ledger=None, site=None, out_dir=None):
+        base = Path(out_dir) if out_dir else None
+        self.data = Path(data or os.environ.get("ECON_DATA_DIR") or ROOT / "data")
+        self.ledger = Path(ledger or (base / "ledger" if base else LEDGER))
+        self.site = Path(site or (base / "web" / "public" / "data" if base else ROOT / "web" / "public" / "data"))
+
+    @classmethod
+    def from_args(cls, args) -> Paths:
+        g = lambda k: getattr(args, k, None)  # noqa: E731
+        return cls(g("data_dir"), g("ledger_dir"), g("site_dir"), g("out_dir"))

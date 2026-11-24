@@ -1,0 +1,6 @@
+{"realtime_start":"2010-01-01","realtime_end":"9999-12-31","observation_start":"2024-01-01","count":4,
+ "observations":[
+  {"realtime_start":"2024-03-12","realtime_end":"2024-04-09","date":"2024-02-01","value":"310.326"},
+  {"realtime_start":"2024-04-10","realtime_end":"9999-12-31","date":"2024-02-01","value":"310.400"},
+  {"realtime_start":"2024-04-10","realtime_end":"9999-12-31","date":"2024-03-01","value":"312.332"},
+  {"realtime_start":"2024-05-15","realtime_end":"9999-12-31","date":"2024-04-01","value":"."}]}

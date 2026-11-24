@@ -1,0 +1,38 @@
+# Model registry (quant-researcher). Engine: src/econ/models/ + src/econ/backtest/. Card: docs/models/<card>.md.
+# Model ids: <market>.<horizon>.<name>.v<N> (stable; behaviour change = new version + card changes log).
+# All parameters below are PINNED a priori (round values, never tuned on data). The last `holdout_years` before
+# the as-of date are reported separately and are locked from any tuning: changing a parameter after looking at
+# results requires a new model version and a logged decision.
+version: 1
+defaults:
+  origin: month_end            # forecast origins on the month-end grid of the composites engine (+ the as-of date)
+  seed: 20261124               # fixed seed for anything stochastic (none used in v1)
+  min_train_months: 120        # labelled origins before the first OOS origin where history allows ...
+  min_train_floor: 36          # ... else this floor and the result is labelled "short sample"
+  holdout_years: 5             # locked from tuning; reported as a separate OOS slice
+  scheme: expanding            # walk-forward, refit every origin, labels used only once known (vintage + lag)
+  evaluation: non_overlapping  # origins whose month index % h == 0 (calendar-anchored, stable); report n_eff
+  ensemble: equal_weight       # until each member has >= 36 OOS points
+  calibration: none_yet        # Platt on OOS predictions once n_eff >= 30 (not before; see card)
+  confidence:                  # published label (skill forecasting-methods section 9)
+    low_below_n_eff: 15
+    high_min_n_eff: 30
+    high_max_p: 0.05           # DM-HLN vs random walk AND Clark-West vs climatology
+    high_slope: [0.8, 1.2]     # reliability (calibration) slope
+horizons:                      # HorizonKey in schemas.py
+  short: {months: 3, window: "1-3m", l2: 10.0}    # headline P(up) from the ridge-logit
+  medium: {months: 12, window: "6-12m", l2: 30.0} # headline return band p10/p50/p90 from ridge + residual quantiles
+baselines: [random_walk, climatology]           # RW: P(up)=0.5, zero drift +- training sd; clim: base rate + quantiles
+targets:                       # log change of the target series from the latest known obs to the obs h months later
+  global_macro: {indicator: indpro,    note: "proxy: US industrial production (no global activity aggregate yet)"}
+  us_equities:  {indicator: sp500,     note: "S&P 500 price index, FRED daily (~10y history, internal licence)"}
+  gold:         {indicator: gold_pink, note: "World Bank Pink Sheet monthly average gold price"}
+  oil:          {indicator: oil_pink,  note: "World Bank Pink Sheet monthly crude average (WTI not used: internal)"}
+models:
+  composite_ridge:
+    version: 1
+    card: live-slice
+    status: challenger         # champion only after the promotion gate (>= 36 OOS points, Owner approval)
+    markets: [global_macro, us_equities, gold, oil]
+    horizons: [short, medium]
+    features: [growth, inflation_policy, financial_conditions]   # composite levels at the origin (NaN -> 0)

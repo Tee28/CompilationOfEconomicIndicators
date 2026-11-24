@@ -1,0 +1,90 @@
+name: ci
+on:
+  pull_request:
+  push:
+    branches: [main]
+    paths-ignore:
+      - "ledger/**"
+      - "web/public/data/**"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  python:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      PYTHONUTF8: "1"
+      ECON_NO_VENV: "1"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: requirements-dev.txt
+      - name: Install
+        run: pip install --quiet -r requirements-dev.txt
+      - name: ruff
+        run: ruff check .
+      - name: pytest
+        run: python -m pytest -q
+      - name: audit
+        run: python econ.py audit
+      - name: codemap is current
+        run: python econ.py codemap --check
+      - name: ledger verify
+        run: python econ.py ledger verify
+      - name: license scan
+        run: |
+          if [ -f web/public/data/manifest.json ]; then python econ.py publish --scan; else
+            echo "::notice::no published site JSON yet (before the first update-data run) - scan skipped"; fi
+
+  web:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Check web project
+        id: web
+        run: |
+          if [ -f web/package-lock.json ]; then echo "ok=true" >> "$GITHUB_OUTPUT"; else
+            echo "ok=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::web/package-lock.json absent - web checks skipped (commit the lockfile to enable them)"
+          fi
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        if: steps.web.outputs.ok == 'true'
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - name: Install
+        if: steps.web.outputs.ok == 'true'
+        working-directory: web
+        run: npm ci
+      - name: Typecheck
+        if: steps.web.outputs.ok == 'true'
+        working-directory: web
+        run: npm run typecheck
+      - name: Vitest
+        if: steps.web.outputs.ok == 'true'
+        working-directory: web
+        run: npm test
+      - name: Build
+        if: steps.web.outputs.ok == 'true'
+        working-directory: web
+        run: npx vite build
+      - name: Size budget (JS+CSS gzip-agnostic, raw KB)
+        if: steps.web.outputs.ok == 'true'
+        working-directory: web
+        env:
+          BUDGET_KB: "1500"
+        run: |
+          kb=$(find dist/assets -type f \( -name '*.js' -o -name '*.css' \) -printf '%s\n' | awk '{s+=$1} END {printf "%d", s/1024}')
+          echo "bundle: ${kb} KB (budget ${BUDGET_KB} KB)"
+          [ "$kb" -le "$BUDGET_KB" ]

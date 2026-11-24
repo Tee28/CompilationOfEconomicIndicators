@@ -1,0 +1,67 @@
+{
+ "schema_version": "1.0.0",
+ "asof": "2026-11-21",
+ "composites": [
+  {
+   "id": "financial_conditions",
+   "name_vi": "Điều kiện tài chính",
+   "license": "open",
+   "level": -0.3,
+   "percentile": 38.0,
+   "label": "Trung tính",
+   "asof": "2026-11-21"
+  },
+  {
+   "id": "credit_stress",
+   "name_vi": "Căng thẳng tín dụng",
+   "license": "internal",
+   "level": null,
+   "percentile": 62.0,
+   "label": "Thận trọng",
+   "asof": "2026-11-21"
+  }
+ ],
+ "markets": [
+  {
+   "id": "global_macro",
+   "name_vi": "Kinh tế toàn cầu",
+   "p_up_short": 0.55,
+   "p_up_medium": 0.6,
+   "confidence_short": "Low",
+   "confidence_medium": "Med",
+   "label": "Trung tính",
+   "page": "/global_macro"
+  },
+  {
+   "id": "us_equities",
+   "name_vi": "Chứng khoán Mỹ",
+   "p_up_short": 0.55,
+   "p_up_medium": 0.6,
+   "confidence_short": "Low",
+   "confidence_medium": "Med",
+   "label": "Trung tính",
+   "page": "/us_equities"
+  },
+  {
+   "id": "gold",
+   "name_vi": "Vàng",
+   "p_up_short": 0.55,
+   "p_up_medium": 0.6,
+   "confidence_short": "Low",
+   "confidence_medium": "Med",
+   "label": "Trung tính",
+   "page": "/gold"
+  },
+  {
+   "id": "oil",
+   "name_vi": "Dầu thô",
+   "p_up_short": 0.55,
+   "p_up_medium": 0.6,
+   "confidence_short": "Low",
+   "confidence_medium": "Med",
+   "label": "Trung tính",
+   "page": "/oil"
+  }
+ ],
+ "disclaimer_vi": "Không phải lời khuyên đầu tư"
+}

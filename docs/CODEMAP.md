@@ -5,29 +5,79 @@ Find code here instead of Glob/Grep over the repo. Architecture and decisions: d
 ## src/econ
 
 - `src/econ/audit.py` Token-hygiene audit: size budgets of always-loaded files, agents, skills, rules, memories, handoff, KB cards. · frontmatter, run
+- `src/econ/backtest/stats.py` Forecast scores and tests: Brier / skill, pinball, DM-HLN (HAC), Clark-West, calibration, confidence label. · brier, skill, pinball, dm_hln, clark_west, calibration, coverage, confidence
+- `src/econ/backtest/walkforward.py` Expanding walk-forward with as-of labels, baselines, non-overlapping evaluation and the live forecast. · predict, evaluate, walk_forward
 - `src/econ/cli.py` `python econ.py <command>` - deterministic CLI shared by humans, agents, hooks and CI. · build_parser, main
 - `src/econ/codemap.py` `econ codemap`: regenerate docs/CODEMAP.md - one line per module (docstring summary) + its public functions. · render, run
 - `src/econ/common.py` Shared helpers: paths, config, JSON/YAML I/O, locks, text, secrets redaction. · EconError, Result, now, utcnow, today, clip, est_tokens, redact …
+- `src/econ/composites/engine.py` Pure composite math (no I/O). Every value at grid date T uses only rows with known_at <= T. · grid, sample, transform, zscore, combine, percentile, label
+- `src/econ/composites/spec.py` config/composites.yaml -> validated CompositeSpec objects (members checked against the indicator registry). · MemberSpec, Defaults, CompositeSpec, CompositesConfig, derived_license, load
+- `src/econ/connectors/base.py` Shared connector plumbing: call budget, result record, GET helper. · BudgetExhausted, Budget, Outcome, get_text
+- `src/econ/connectors/fred.py` FRED / ALFRED observations. Key from FRED_API_KEY (http.fill); never printed. · MissingKey, api_key, have_key, parse, fetch, vintage_batches
+- `src/econ/connectors/oecd.py` OECD Data Explorer SDMX (CSV). CLI dataflow: OECD.SDD.STES,DSD_STES@DF_CLI. · parse, fetch
+- `src/econ/connectors/pinksheet.py` World Bank Pink Sheet monthly prices (gold, crude). Discovers the xlsx link from the commodity-markets page. · find_link, read_sheet_rows, parse, Session, fetch
 - `src/econ/context.py` `econ context <role> <target>`: a minimal context pack (<= 40 lines) so an agent starts a task without exploring. · build, run
 - `src/econ/doctor.py` `econ doctor`: environment health (Python, venv, encoding, packages, FTS5, git, settings, keys, tools). · run, to_json
 - `src/econ/hooks.py` Claude Code hooks. Stdlib only, fail-open (always exit 0), silent unless there is something to say. · session_start, pre_read, pre_write, post_edit, subagent_stop, pre_compact, main
 - `src/econ/http.py` HTTP client for every network call: generic User-Agent, timeout, OS trust store, secret redaction. · session, placeholders, fill, get
 - `src/econ/kb.py` Knowledge base: markdown cards in knowledge/<domain>/ + SQLite FTS5 index (.econ/kb.sqlite, diacritic-insensitive). · parse_card, card_issues, lint, index, search, cmd_search, cmd_add, cmd_index …
+- `src/econ/ledger/book.py` Append-only forecast ledger: <ledger>/forecasts/<yyyy-mm>.jsonl (+ chain.json hash chain) and health.json. · read_all, append, score, verify, health, cmd_append, cmd_score, cmd_verify …
+- `src/econ/models/data.py` As-of datasets: composite features on the origin grid and vintage-aware target labels. · features, last_known, Target, target_for
+- `src/econ/models/fit.py` Pure numpy fits (deterministic, no randomness): L2 logistic (Newton) and ridge, intercept unpenalised. · logit_ridge, ridge, sigmoid
+- `src/econ/models/run.py` Forecast runner: features -> walk-forward per market x horizon -> ForecastRecord + HorizonForecast + report. · Context, MarketRun, context, run_market, forecast, forecast_all, out_dir, cmd_forecast
+- `src/econ/models/spec.py` config/models.yaml -> validated ModelsConfig (targets, horizons, pinned params, model families). · ConfidenceRule, Defaults, HorizonSpec, TargetSpec, ModelFamily, ModelsConfig, load
 - `src/econ/probe.py` P0 probe of Claude Code behaviour on this machine (hooks, agent_type, nested spawning, skills, tokens). · enable, disable, mark, transcript_tokens, transcript_replies, report
+- `src/econ/publish/narrative.py` Deterministic Vietnamese narrative: rulebook/phrases.vi.yaml templates + model numbers. No LLM, no randomness. · phrases, band, pct, ret, fill, horizon_text, page_text, market_label …
+- `src/econ/publish/update.py` `econ update`: fetch > compute > forecast > ledger append/score/health > publish, with step-level status. · run, cmd_update
+- `src/econ/registry.py` Indicator registry: load/validate config/indicators.yaml against config/sources.yaml; `ind list|get`. · IndicatorSpec, load, cmd_ind_list, cmd_ind_get
+- `src/econ/schemas.py` Data contracts (pydantic v2): pipeline internals + published site JSON + ledger lines. · IndicatorSeries, CompositeSeries, SiteSeries, FileEntry, Manifest, CompositeSummary, MarketSummary, Overview …
 - `src/econ/sources.py` Source registry commands: `src list`, `src check` (reachability + content-type sanity per source). · registry, validate, check_one, cmd_list, cmd_check
 - `src/econ/status.py` Session brief and compaction snapshot. Stdlib only (called from hooks). · ready_tasks, brief, compact_snapshot
+- `src/econ/store.py` Append-only vintage store under data/ (the durable copy is the private econ-data repo). · append, read_vintages, read_frame, read, to_series
 - `src/econ/work.py` Work ledger: task DAG, review notes, handoff, decisions, gates, activity/token log. · load_tasks, task_add, task_list, task_next, task_get, task_set, open_notes, notes_add …
 
 ## tests
 
-- `tests/conftest.py` Test isolation: every test that needs a repo gets a temporary ECON_ROOT with a copy of config/. · root, run_hook, run_cli
+- `tests/conftest.py` Test isolation: every test that needs a repo gets a temporary ECON_ROOT with a copy of config/. · root, run_hook, run_cli, synth_frame, synth_store
+- `tests/connectors/test_connectors.py` Offline connector tests: http.get is monkeypatched with fixtures; no network, no real keys. · 11 tests · Resp, make_xlsx, routes, paths, spec_of
+- `tests/test_composites.py` Composites engine: as-of safety (truncation + vintage tests), renormalisation, labels, license rule, CLI. · 17 tests · specs, cfg, members, full
 - `tests/test_core.py`  · 8 tests
+- `tests/test_e2e_slice.py` Offline e2e of the live slice (synthetic store) + lint of the GitHub workflows. · 8 tests · econ, dry_run_out, load
 - `tests/test_hooks.py`  · 11 tests
+- `tests/test_ledger.py` Ledger: append idempotent, score appends outcome lines, verify catches any rewrite, health.json. · 6 tests
+- `tests/test_models.py` Models + backtest: no look-ahead (truncation, vintage labels, real-time consistency), skill/tests, contract. · 15 tests · ctx_origin
+- `tests/test_publish.py` Publish: golden narrative, license gate, schema validation of site JSON, offline e2e `update --dry-run`. · 15 tests · hf, built
+- `tests/test_registry_store.py` Registry, vintage store and transforms (offline, tmp_path). · 12 tests
+- `tests/test_schemas.py` Contract tests: fixtures validate, license gate holds, CLI stubs fail cleanly. · 10 tests · load
 - `tests/test_work.py` Work ledger, gates, KB, context, audit and codemap - through the CLI like agents use them. · 10 tests
+
+## web/src
+
+- `web/src/App.tsx` 
+- `web/src/components/Charts.tsx` 
+- `web/src/components/Layout.tsx` 
+- `web/src/components/Ui.tsx` 
+- `web/src/i18n/vi.ts` 
+- `web/src/lib/fixtures.ts` Dev-only fallback (dynamic import behind import.meta.env.DEV; dropped from production builds).
+- `web/src/lib/format.ts` 
+- `web/src/lib/hooks.ts` 
+- `web/src/lib/loader.ts` 
+- `web/src/main.tsx` 
+- `web/src/pages/MarketPage.tsx` 
+- `web/src/pages/MethodologyPage.tsx` 
+- `web/src/pages/OverviewPage.tsx` 
+- `web/src/test/pages.test.tsx` 
+- `web/src/test/setup.ts` 
 
 ## config & CI
 
+- `.github/workflows/ci.yml`
+- `.github/workflows/deploy-site.yml`
 - `.github/workflows/src-check.yml`
+- `.github/workflows/update-data.yml`
+- `config/composites.yaml`
 - `config/econ.yaml`
 - `config/hooks.json`
+- `config/indicators.yaml`
+- `config/models.yaml`
 - `config/sources.yaml`

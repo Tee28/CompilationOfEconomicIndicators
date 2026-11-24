@@ -1,0 +1,27 @@
+# Indicator registry (live slice: global macro, US equities, gold, oil).
+# lag_days = publication lag counted from the observation date AS STORED (monthly = period start, e.g. 2026-10-01); usable from date + lag_days (no look-ahead).
+# transform = default model-facing transform: level | yoy | diff | log_diff | zscore (see transforms/).
+# license_class: attributed FRED rows are public-domain-like government/Fed data; internal = third-party
+# (S&P, CBOE, ICE, EIA via FRED) -> models only, site shows signals never levels.
+# SP500 on FRED: ~10y of daily history only (S&P licence); ICE BofA: ~3y. Longer history needs another source.
+indicators:
+  sp500:     {name: "S&P 500", source: fred, series: SP500, freq: D, lag_days: 1, transform: log_diff, unit: index, license_class: internal, markets: [us_equities]}
+  vix:       {name: "CBOE VIX", source: fred, series: VIXCLS, freq: D, lag_days: 1, transform: level, unit: index, license_class: internal, markets: [us_equities, global_macro]}
+  dgs10:     {name: "US 10Y Treasury yield", source: fred, series: DGS10, freq: D, lag_days: 1, transform: diff, unit: "%", license_class: attributed, markets: [global_macro, us_equities, gold]}
+  dgs2:      {name: "US 2Y Treasury yield", source: fred, series: DGS2, freq: D, lag_days: 1, transform: diff, unit: "%", license_class: attributed, markets: [global_macro, us_equities]}
+  t10y2y:    {name: "US 10Y-2Y spread", source: fred, series: T10Y2Y, freq: D, lag_days: 1, transform: level, unit: "pp", license_class: attributed, markets: [global_macro, us_equities]}
+  baa10y:    {name: "Moody's Baa - 10Y spread", source: fred, series: BAA10Y, freq: D, lag_days: 1, transform: level, unit: "pp", license_class: internal, markets: [global_macro, us_equities]}
+  hy_oas:    {name: "ICE BofA US High Yield OAS", source: fred, series: BAMLH0A0HYM2, freq: D, lag_days: 1, transform: level, unit: "%", license_class: internal, markets: [global_macro, us_equities]}
+  nfci:      {name: "Chicago Fed NFCI", source: fred, series: NFCI, freq: W, lag_days: 5, transform: level, unit: index, license_class: attributed, markets: [global_macro, us_equities]}
+  usd_broad: {name: "Trade-weighted USD (broad)", source: fred, series: DTWEXBGS, freq: D, lag_days: 7, transform: log_diff, unit: index, license_class: attributed, markets: [global_macro, gold, oil]}
+  fedfunds:  {name: "Effective fed funds rate", source: fred, series: FEDFUNDS, freq: M, lag_days: 32, transform: diff, unit: "%", license_class: attributed, markets: [global_macro, gold]}
+  cpi:       {name: "US CPI (all urban)", source: fred, series: CPIAUCSL, freq: M, lag_days: 45, transform: yoy, unit: index, license_class: attributed, markets: [global_macro, gold]}
+  unrate:    {name: "US unemployment rate", source: fred, series: UNRATE, freq: M, lag_days: 38, transform: diff, unit: "%", license_class: attributed, markets: [global_macro, us_equities]}
+  payems:    {name: "US nonfarm payrolls", source: fred, series: PAYEMS, freq: M, lag_days: 38, transform: yoy, unit: "thousand", license_class: attributed, markets: [global_macro, us_equities]}
+  indpro:    {name: "US industrial production", source: fred, series: INDPRO, freq: M, lag_days: 47, transform: yoy, unit: index, license_class: attributed, markets: [global_macro, oil]}
+  icsa:      {name: "US initial jobless claims", source: fred, series: ICSA, freq: W, lag_days: 5, transform: level, unit: persons, license_class: attributed, markets: [global_macro, us_equities]}
+  wti:       {name: "WTI crude oil spot", source: fred, series: DCOILWTICO, freq: D, lag_days: 7, transform: log_diff, unit: "USD/bbl", license_class: internal, markets: [oil, global_macro]}
+  brent:     {name: "Brent crude oil spot", source: fred, series: DCOILBRENTEU, freq: D, lag_days: 7, transform: log_diff, unit: "USD/bbl", license_class: internal, markets: [oil, global_macro]}
+  gold_pink: {name: "Gold price (World Bank Pink Sheet, monthly)", source: worldbank_pinksheet, series: GOLD, freq: M, lag_days: 35, transform: log_diff, unit: "USD/toz", license_class: attributed, markets: [gold]}
+  oil_pink:  {name: "Crude oil average (World Bank Pink Sheet, monthly)", source: worldbank_pinksheet, series: CRUDE_PETRO, freq: M, lag_days: 35, transform: log_diff, unit: "USD/bbl", license_class: attributed, markets: [oil]}
+  oecd_cli:  {name: "OECD Composite Leading Indicator (US)", source: oecd, series: "USA.M.LI.IX._Z.AA.IX._Z.H", freq: M, lag_days: 45, transform: diff, unit: index, license_class: attributed, markets: [global_macro, us_equities]}
